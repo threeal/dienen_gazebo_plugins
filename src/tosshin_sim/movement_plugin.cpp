@@ -142,20 +142,21 @@ void MovementPlugin::Update()
   auto current_time = world->SimTime();
   auto delta_time = (current_time - last_time).Double();
 
-  // Set the velocity
+  // Set velocities
   {
     auto angle = model->RelativePose().Rot().Yaw();
+
     auto linear_velocity = ignition::math::Vector3d(
-      forward * cos(angle) + left * sin(angle),
-      forward * sin(angle) + left * cos(angle),
-      0.0
+      (forward * cos(angle) + left * sin(angle)) * delta_time * 100.0,
+      (forward * sin(angle) + left * cos(angle)) * delta_time * 100.0,
+      model->WorldLinearVel().Z()
     );
 
-    model->SetLinearVel(linear_velocity * delta_time * 100.0);
+    model->SetLinearVel(linear_velocity);
     model->SetAngularVel({0.0, 0.0, yaw * delta_time * 100.0});
   }
 
-  // Lock the pitch and the roll rotation
+  // Lock pitch and roll rotations
   {
     auto pose = model->RelativePose();
     auto rot = pose.Rot();
