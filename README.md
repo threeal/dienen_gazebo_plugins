@@ -1,3 +1,11 @@
 # Tosshin Sim
 
-A Gazebo simulation version of Tosshin movement package.
+[![latest version](https://img.shields.io/github/v/release/threeal/tosshin_sim.svg)](https://github.com/threeal/tosshin_sim/releases/)
+[![license](https://img.shields.io/github/license/threeal/tosshin_sim.svg)](./LICENSE)
+[![build and test status](https://github.com/threeal/tosshin_sim/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/threeal/tosshin_sim/actions)
+
+This package provides [a Gazebo simulation](http://gazebosim.org/) version of Tosshin movement package.
+
+## License
+
+This project is licensed under [the MIT License](./LICENSE).
