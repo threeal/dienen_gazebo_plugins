@@ -24,6 +24,8 @@
 #include <gazebo/common/Plugin.hh>
 #include <rclcpp/rclcpp.hpp>
 #include <tosshin_interfaces/msg/maneuver.hpp>
+#include <tosshin_interfaces/msg/orientation.hpp>
+#include <tosshin_interfaces/msg/position.hpp>
 #include <tosshin_interfaces/srv/configure_maneuver.hpp>
 
 #include <map>
@@ -42,11 +44,21 @@ public:
 private:
   void Update();
 
+  double initial_x_position;
+  double initial_y_position;
+  double initial_yaw_orientation;
+
   double forward;
   double left;
   double yaw;
 
   rclcpp::Node::SharedPtr node;
+
+  rclcpp::Publisher<tosshin_interfaces::msg::Position>::SharedPtr
+    position_publisher;
+
+  rclcpp::Publisher<tosshin_interfaces::msg::Orientation>::SharedPtr
+    orientation_publisher;
 
   rclcpp::Publisher<tosshin_interfaces::msg::Maneuver>::SharedPtr
     maneuver_event_publisher;
