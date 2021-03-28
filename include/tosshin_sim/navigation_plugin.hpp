@@ -18,8 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#ifndef TOSSHIN_SIM__MOVEMENT_PLUGIN_HPP_
-#define TOSSHIN_SIM__MOVEMENT_PLUGIN_HPP_
+#ifndef TOSSHIN_SIM__NAVIGATION_PLUGIN_HPP_
+#define TOSSHIN_SIM__NAVIGATION_PLUGIN_HPP_
 
 #include <gazebo/common/Plugin.hh>
 #include <rclcpp/rclcpp.hpp>
@@ -32,10 +32,10 @@
 namespace tosshin_sim
 {
 
-class MovementPlugin : public gazebo::ModelPlugin
+class NavigationPlugin : public gazebo::ModelPlugin
 {
 public:
-  MovementPlugin();
+  NavigationPlugin();
 
   void Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf);
 
@@ -64,4 +64,4 @@ private:
 
 }  // namespace tosshin_sim
 
-#endif  // TOSSHIN_SIM__MOVEMENT_PLUGIN_HPP_
+#endif  // TOSSHIN_SIM__NAVIGATION_PLUGIN_HPP_

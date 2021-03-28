@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "tosshin_sim/movement_plugin.hpp"
+#include "tosshin_sim/navigation_plugin.hpp"
 
 #include <gazebo/physics/physics.hh>
 #include <gazebo_ros/node.hpp>
@@ -31,14 +31,14 @@ namespace tosshin_sim
 
 const double PI = atan(1) * 4;
 
-MovementPlugin::MovementPlugin()
+NavigationPlugin::NavigationPlugin()
 : forward(0.0),
   left(0.0),
   yaw(0.0)
 {
 }
 
-void MovementPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf)
+void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf)
 {
   // Initialize the node
   {
@@ -130,14 +130,14 @@ void MovementPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf)
     last_time = world->SimTime();
 
     update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(
-      std::bind(&MovementPlugin::Update, this)
+      std::bind(&NavigationPlugin::Update, this)
     );
 
     RCLCPP_INFO(node->get_logger(), "Connected to the world update!");
   }
 }
 
-void MovementPlugin::Update()
+void NavigationPlugin::Update()
 {
   auto current_time = world->SimTime();
   auto delta_time = (current_time - last_time).Double();
@@ -170,6 +170,6 @@ void MovementPlugin::Update()
   last_time = current_time;
 }
 
-GZ_REGISTER_MODEL_PLUGIN(MovementPlugin)
+GZ_REGISTER_MODEL_PLUGIN(NavigationPlugin)
 
 }  // namespace tosshin_sim

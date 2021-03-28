@@ -3,7 +3,7 @@
 <package format="3">
   <name>tosshin_sim</name>
   <version>0.1.0</version>
-  <description>A Gazebo simulation version of Tosshin movement package</description>
+  <description>Gazebo simulation version of Tosshin mobile robot navigation package</description>
   <maintainer email="alfi.maulana.f@gmail.com">Alfi Maulana</maintainer>
   <license>MIT License</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
