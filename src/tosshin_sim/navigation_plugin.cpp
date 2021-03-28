@@ -53,7 +53,6 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
 
     // Initialize the position publisher
     {
-      using Position = tosshin_interfaces::msg::Position;
       position_publisher = node->create_publisher<Position>(
         std::string(node->get_name()) + "/position", 10
       );
@@ -67,7 +66,6 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
 
     // Initialize the orientation publisher
     {
-      using Orientation = tosshin_interfaces::msg::Orientation;
       orientation_publisher = node->create_publisher<Orientation>(
         std::string(node->get_name()) + "/orientation", 10
       );
@@ -81,7 +79,6 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
 
     // Initialize the maneuver event publisher
     {
-      using Maneuver = tosshin_interfaces::msg::Maneuver;
       maneuver_event_publisher = node->create_publisher<Maneuver>(
         std::string(node->get_name()) + "/maneuver_event", 10
       );
@@ -93,55 +90,23 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
       );
     }
 
+    // Initialize the maneuver event subscription
+    {
+      maneuver_input_subscription = node->create_subscription<Maneuver>(
+        std::string(node->get_name()) + "/maneuver_input", 10,
+        [this](const Maneuver::SharedPtr maneuver) {
+          configure_maneuver(*maneuver);
+        }
+      );
+    }
+
     // Initialize the configure maneuver service
     {
-      using ConfigureManeuver = tosshin_interfaces::srv::ConfigureManeuver;
       configure_maneuver_service = node->create_service<ConfigureManeuver>(
         std::string(node->get_name()) + "/configure_maneuver",
         [this](ConfigureManeuver::Request::SharedPtr request,
         ConfigureManeuver::Response::SharedPtr response) {
-          bool configured = false;
-
-          if (request->maneuver.forward.size() > 0) {
-            forward = request->maneuver.forward[0];
-            response->maneuver.forward.push_back(forward);
-
-            configured = true;
-            RCLCPP_DEBUG_STREAM(
-              node->get_logger(),
-              "Forward maneuver configured into " << forward << "!"
-            );
-          }
-
-          if (request->maneuver.left.size() > 0) {
-            left = request->maneuver.left[0];
-            response->maneuver.left.push_back(left);
-
-            configured = true;
-            RCLCPP_DEBUG_STREAM(
-              node->get_logger(),
-              "Left maneuver configured into " << left << "!"
-            );
-          }
-
-          if (request->maneuver.yaw.size() > 0) {
-            yaw = request->maneuver.yaw[0];
-            response->maneuver.yaw.push_back(yaw);
-
-            configured = true;
-            RCLCPP_DEBUG_STREAM(
-              node->get_logger(),
-              "Yaw maneuver configured into " << yaw << "!"
-            );
-          }
-
-          if (configured) {
-            maneuver_event_publisher->publish(response->maneuver);
-          } else {
-            response->maneuver.forward.push_back(forward);
-            response->maneuver.left.push_back(left);
-            response->maneuver.yaw.push_back(yaw);
-          }
+          response->maneuver = configure_maneuver(request->maneuver);
         }
       );
 
@@ -192,23 +157,23 @@ void NavigationPlugin::Update()
 
   // Publish current position
   {
-    tosshin_interfaces::msg::Position message;
+    Position position;
 
-    auto position = model->WorldPose().Pos();
+    auto pos = model->WorldPose().Pos();
 
-    message.x = position.X() - initial_x_position;
-    message.y = position.Y() - initial_y_position;
+    position.x = pos.X() - initial_x_position;
+    position.y = pos.Y() - initial_y_position;
 
-    position_publisher->publish(message);
+    position_publisher->publish(position);
   }
 
   // Publish current orientation
   {
-    tosshin_interfaces::msg::Orientation message;
+    Orientation orientation;
 
-    message.yaw = model->WorldPose().Rot().Yaw() - initial_yaw_orientation;
+    orientation.yaw = model->WorldPose().Rot().Yaw() - initial_yaw_orientation;
 
-    orientation_publisher->publish(message);
+    orientation_publisher->publish(orientation);
   }
 
   // Set velocities
@@ -237,6 +202,55 @@ void NavigationPlugin::Update()
   }
 
   last_time = current_time;
+}
+
+Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
+{
+  Maneuver result;
+  bool configured = false;
+
+  if (maneuver.forward.size() > 0) {
+    forward = maneuver.forward.front();
+    result.forward.push_back(forward);
+
+    configured = true;
+    RCLCPP_DEBUG_STREAM(
+      node->get_logger(),
+      "Forward maneuver configured into " << forward << "!"
+    );
+  }
+
+  if (maneuver.left.size() > 0) {
+    left = maneuver.left.front();
+    result.left.push_back(left);
+
+    configured = true;
+    RCLCPP_DEBUG_STREAM(
+      node->get_logger(),
+      "Left maneuver configured into " << left << "!"
+    );
+  }
+
+  if (maneuver.yaw.size() > 0) {
+    yaw = maneuver.yaw.front();
+    result.yaw.push_back(yaw);
+
+    configured = true;
+    RCLCPP_DEBUG_STREAM(
+      node->get_logger(),
+      "Yaw maneuver configured into " << yaw << "!"
+    );
+  }
+
+  if (configured) {
+    maneuver_event_publisher->publish(result);
+  } else {
+    result.forward.push_back(forward);
+    result.left.push_back(left);
+    result.yaw.push_back(yaw);
+  }
+
+  return result;
 }
 
 GZ_REGISTER_MODEL_PLUGIN(NavigationPlugin)

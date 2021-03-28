@@ -33,6 +33,10 @@
 
 namespace tosshin_sim
 {
+using Maneuver = tosshin_interfaces::msg::Maneuver;
+using Orientation = tosshin_interfaces::msg::Orientation;
+using Position = tosshin_interfaces::msg::Position;
+using ConfigureManeuver = tosshin_interfaces::srv::ConfigureManeuver;
 
 class NavigationPlugin : public gazebo::ModelPlugin
 {
@@ -44,6 +48,8 @@ public:
 private:
   void Update();
 
+  Maneuver configure_maneuver(const Maneuver & maneuver);
+
   double initial_x_position;
   double initial_y_position;
   double initial_yaw_orientation;
@@ -54,17 +60,13 @@ private:
 
   rclcpp::Node::SharedPtr node;
 
-  rclcpp::Publisher<tosshin_interfaces::msg::Position>::SharedPtr
-    position_publisher;
+  rclcpp::Publisher<Position>::SharedPtr position_publisher;
+  rclcpp::Publisher<Orientation>::SharedPtr orientation_publisher;
 
-  rclcpp::Publisher<tosshin_interfaces::msg::Orientation>::SharedPtr
-    orientation_publisher;
+  rclcpp::Publisher<Maneuver>::SharedPtr maneuver_event_publisher;
+  rclcpp::Subscription<Maneuver>::SharedPtr maneuver_input_subscription;
 
-  rclcpp::Publisher<tosshin_interfaces::msg::Maneuver>::SharedPtr
-    maneuver_event_publisher;
-
-  rclcpp::Service<tosshin_interfaces::srv::ConfigureManeuver>::SharedPtr
-    configure_maneuver_service;
+  rclcpp::Service<ConfigureManeuver>::SharedPtr configure_maneuver_service;
 
   gazebo::physics::ModelPtr model;
   gazebo::physics::WorldPtr world;
