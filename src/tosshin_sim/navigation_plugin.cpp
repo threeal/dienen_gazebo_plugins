@@ -90,13 +90,19 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
       );
     }
 
-    // Initialize the maneuver event subscription
+    // Initialize the maneuver input subscription
     {
       maneuver_input_subscription = node->create_subscription<Maneuver>(
         std::string(node->get_name()) + "/maneuver_input", 10,
         [this](const Maneuver::SharedPtr maneuver) {
           configure_maneuver(*maneuver);
         }
+      );
+
+      RCLCPP_INFO_STREAM(
+        node->get_logger(),
+        "Maneuver input subscription initialized on " <<
+          maneuver_input_subscription->get_topic_name() << "!"
       );
     }
 
@@ -171,7 +177,9 @@ void NavigationPlugin::Update()
   {
     Orientation orientation;
 
-    orientation.yaw = model->WorldPose().Rot().Yaw() - initial_yaw_orientation;
+    double yaw = model->WorldPose().Rot().Yaw();
+
+    orientation.yaw = (yaw - initial_yaw_orientation) * 180.0 / PI;
 
     orientation_publisher->publish(orientation);
   }
@@ -187,7 +195,7 @@ void NavigationPlugin::Update()
     );
 
     model->SetLinearVel(linear_velocity);
-    model->SetAngularVel({0.0, 0.0, yaw * delta_time * 100.0});
+    model->SetAngularVel({0.0, 0.0, yaw * delta_time * 1000.0});
   }
 
   // Lock pitch and roll rotations
@@ -232,8 +240,8 @@ Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
   }
 
   if (maneuver.yaw.size() > 0) {
-    yaw = maneuver.yaw.front();
-    result.yaw.push_back(yaw);
+    yaw = maneuver.yaw.front() * PI / 180.0;
+    result.yaw.push_back(yaw * 180.0 / PI);
 
     configured = true;
     RCLCPP_DEBUG_STREAM(
@@ -247,7 +255,7 @@ Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
   } else {
     result.forward.push_back(forward);
     result.left.push_back(left);
-    result.yaw.push_back(yaw);
+    result.yaw.push_back(yaw * 180.0 / PI);
   }
 
   return result;
