@@ -19,19 +19,19 @@ find_package(gazebo_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tosshin_interfaces REQUIRED)
 
-add_library(movement_plugin SHARED
-  "src/tosshin_sim/movement_plugin.cpp")
+add_library(navigation_plugin SHARED
+  "src/tosshin_sim/navigation_plugin.cpp")
 
-target_include_directories(movement_plugin PUBLIC
+target_include_directories(navigation_plugin PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-ament_target_dependencies(movement_plugin
+ament_target_dependencies(navigation_plugin
   gazebo_ros
   rclcpp
   tosshin_interfaces)
 
-install(TARGETS movement_plugin
+install(TARGETS navigation_plugin
   DESTINATION "share/${PROJECT_NAME}/plugins/${PROJECT_NAME}")
 
 if(BUILD_TESTING)
