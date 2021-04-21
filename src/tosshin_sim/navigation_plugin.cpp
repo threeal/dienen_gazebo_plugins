@@ -185,13 +185,13 @@ void NavigationPlugin::Update()
     auto gravity = model->WorldLinearVel().Z();
 
     auto linear_velocity = ignition::math::Vector3d(
-      (forward * cos(angle) + left * sin(angle)) / 100.0,
-      (forward * sin(angle) + left * cos(angle)) / 100.0,
+      (forward * cos(angle) + left * sin(angle)) / 60.0,
+      (forward * sin(angle) + left * cos(angle)) / 60.0,
       gravity < 0.0 ? gravity : 0.0
     );
 
     model->SetLinearVel(linear_velocity);
-    model->SetAngularVel({0.0, 0.0, yaw});
+    model->SetAngularVel({0.0, 0.0, yaw / 60.0});
   }
 
   // Lock pitch and roll rotations
@@ -234,8 +234,8 @@ Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
   }
 
   if (maneuver.yaw.size() > 0) {
-    yaw = keisan::deg_to_rad(maneuver.yaw.front());
-    result.yaw.push_back(keisan::rad_to_deg(yaw));
+    yaw = maneuver.yaw.front();
+    result.yaw.push_back(yaw);
 
     configured = true;
     RCLCPP_DEBUG_STREAM(
@@ -249,7 +249,7 @@ Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
   } else {
     result.forward.push_back(forward);
     result.left.push_back(left);
-    result.yaw.push_back(keisan::rad_to_deg(yaw));
+    result.yaw.push_back(yaw);
   }
 
   return result;
