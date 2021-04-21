@@ -22,14 +22,13 @@
 
 #include <gazebo/physics/physics.hh>
 #include <gazebo_ros/node.hpp>
+#include <keisan/keisan.hpp>
 
 #include <string>
 #include <utility>
 
 namespace tosshin_sim
 {
-
-const double PI = atan(1) * 4;
 
 NavigationPlugin::NavigationPlugin()
 : initial_x_position(0.0),
@@ -146,7 +145,6 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
 
     // Initialize the update connection
     {
-      last_time = world->SimTime();
       update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(
         std::bind(&NavigationPlugin::Update, this)
       );
@@ -158,9 +156,6 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
 
 void NavigationPlugin::Update()
 {
-  auto current_time = world->SimTime();
-  auto delta_time = (current_time - last_time).Double();
-
   // Publish current position
   {
     Position position;
@@ -179,7 +174,7 @@ void NavigationPlugin::Update()
 
     double yaw = model->WorldPose().Rot().Yaw();
 
-    orientation.yaw = (yaw - initial_yaw_orientation) * 180.0 / PI;
+    orientation.yaw = keisan::rad_to_deg(yaw - initial_yaw_orientation);
 
     orientation_publisher->publish(orientation);
   }
@@ -187,15 +182,16 @@ void NavigationPlugin::Update()
   // Set velocities
   {
     auto angle = model->RelativePose().Rot().Yaw();
+    auto gravity = model->WorldLinearVel().Z();
 
     auto linear_velocity = ignition::math::Vector3d(
-      (forward * cos(angle) + left * sin(angle)) * delta_time * 100.0,
-      (forward * sin(angle) + left * cos(angle)) * delta_time * 100.0,
-      model->WorldLinearVel().Z()
+      (forward * cos(angle) + left * sin(angle)) / 60.0,
+      (forward * sin(angle) + left * cos(angle)) / 60.0,
+      gravity < 0.0 ? gravity : 0.0
     );
 
     model->SetLinearVel(linear_velocity);
-    model->SetAngularVel({0.0, 0.0, yaw * delta_time * 1000.0});
+    model->SetAngularVel({0.0, 0.0, yaw / 60.0});
   }
 
   // Lock pitch and roll rotations
@@ -208,8 +204,6 @@ void NavigationPlugin::Update()
 
     model->SetRelativePose(pose);
   }
-
-  last_time = current_time;
 }
 
 Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
@@ -240,8 +234,8 @@ Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
   }
 
   if (maneuver.yaw.size() > 0) {
-    yaw = maneuver.yaw.front() * PI / 180.0;
-    result.yaw.push_back(yaw * 180.0 / PI);
+    yaw = maneuver.yaw.front();
+    result.yaw.push_back(yaw);
 
     configured = true;
     RCLCPP_DEBUG_STREAM(
@@ -255,7 +249,7 @@ Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
   } else {
     result.forward.push_back(forward);
     result.left.push_back(left);
-    result.yaw.push_back(yaw * 180.0 / PI);
+    result.yaw.push_back(yaw);
   }
 
   return result;

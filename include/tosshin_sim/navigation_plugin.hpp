@@ -71,8 +71,6 @@ private:
   gazebo::physics::ModelPtr model;
   gazebo::physics::WorldPtr world;
 
-  gazebo::common::Time last_time;
-
   gazebo::event::ConnectionPtr update_connection;
 };
 
