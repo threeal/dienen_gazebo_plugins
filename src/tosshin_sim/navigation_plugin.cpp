@@ -145,7 +145,6 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
 
     // Initialize the update connection
     {
-      last_time = world->SimTime();
       update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(
         std::bind(&NavigationPlugin::Update, this)
       );
@@ -157,9 +156,6 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
 
 void NavigationPlugin::Update()
 {
-  auto current_time = world->SimTime();
-  auto delta_time = (current_time - last_time).Double();
-
   // Publish current position
   {
     Position position;
@@ -186,15 +182,16 @@ void NavigationPlugin::Update()
   // Set velocities
   {
     auto angle = model->RelativePose().Rot().Yaw();
+    auto gravity = model->WorldLinearVel().Z();
 
     auto linear_velocity = ignition::math::Vector3d(
-      (forward * cos(angle) + left * sin(angle)) * delta_time * 100.0,
-      (forward * sin(angle) + left * cos(angle)) * delta_time * 100.0,
-      model->WorldLinearVel().Z()
+      (forward * cos(angle) + left * sin(angle)) / 100.0,
+      (forward * sin(angle) + left * cos(angle)) / 100.0,
+      gravity < 0.0 ? gravity : 0.0
     );
 
     model->SetLinearVel(linear_velocity);
-    model->SetAngularVel({0.0, 0.0, yaw * delta_time * 1000.0});
+    model->SetAngularVel({0.0, 0.0, yaw});
   }
 
   // Lock pitch and roll rotations
@@ -207,8 +204,6 @@ void NavigationPlugin::Update()
 
     model->SetRelativePose(pose);
   }
-
-  last_time = current_time;
 }
 
 Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
