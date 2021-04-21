@@ -16,6 +16,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(gazebo_ros REQUIRED)
+find_package(keisan REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tosshin_interfaces REQUIRED)
 
@@ -28,6 +29,7 @@ target_include_directories(navigation_plugin PUBLIC
 
 ament_target_dependencies(navigation_plugin
   gazebo_ros
+  keisan
   rclcpp
   tosshin_interfaces)
 

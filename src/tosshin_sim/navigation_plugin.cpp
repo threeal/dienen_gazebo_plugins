@@ -22,14 +22,13 @@
 
 #include <gazebo/physics/physics.hh>
 #include <gazebo_ros/node.hpp>
+#include <keisan/keisan.hpp>
 
 #include <string>
 #include <utility>
 
 namespace tosshin_sim
 {
-
-const double PI = atan(1) * 4;
 
 NavigationPlugin::NavigationPlugin()
 : initial_x_position(0.0),
@@ -179,7 +178,7 @@ void NavigationPlugin::Update()
 
     double yaw = model->WorldPose().Rot().Yaw();
 
-    orientation.yaw = (yaw - initial_yaw_orientation) * 180.0 / PI;
+    orientation.yaw = keisan::rad_to_deg(yaw - initial_yaw_orientation);
 
     orientation_publisher->publish(orientation);
   }
@@ -240,8 +239,8 @@ Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
   }
 
   if (maneuver.yaw.size() > 0) {
-    yaw = maneuver.yaw.front() * PI / 180.0;
-    result.yaw.push_back(yaw * 180.0 / PI);
+    yaw = keisan::deg_to_rad(maneuver.yaw.front());
+    result.yaw.push_back(keisan::rad_to_deg(yaw));
 
     configured = true;
     RCLCPP_DEBUG_STREAM(
@@ -255,7 +254,7 @@ Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
   } else {
     result.forward.push_back(forward);
     result.left.push_back(left);
-    result.yaw.push_back(yaw * 180.0 / PI);
+    result.yaw.push_back(keisan::rad_to_deg(yaw));
   }
 
   return result;
