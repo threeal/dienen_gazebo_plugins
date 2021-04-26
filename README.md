@@ -1,4 +1,4 @@
-# Tosshin Sim
+# Tosshin Gazebo Plugins
 
 [![latest version](https://img.shields.io/github/v/release/threeal/tosshin_sim.svg)](https://github.com/threeal/tosshin_sim/releases/)
 [![license](https://img.shields.io/github/license/threeal/tosshin_sim.svg)](./LICENSE)

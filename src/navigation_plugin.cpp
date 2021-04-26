@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "tosshin_sim/navigation_plugin.hpp"
+#include "tosshin_gazebo_plugins/navigation_plugin.hpp"
 
 #include <gazebo/physics/physics.hh>
 #include <gazebo_ros/node.hpp>
@@ -27,7 +27,7 @@
 #include <string>
 #include <utility>
 
-namespace tosshin_sim
+namespace tosshin_gazebo_plugins
 {
 
 NavigationPlugin::NavigationPlugin()
@@ -257,4 +257,4 @@ Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
 
 GZ_REGISTER_MODEL_PLUGIN(NavigationPlugin)
 
-}  // namespace tosshin_sim
+}  // namespace tosshin_gazebo_plugins
