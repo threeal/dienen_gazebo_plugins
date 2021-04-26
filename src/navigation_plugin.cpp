@@ -24,174 +24,81 @@
 #include <gazebo_ros/node.hpp>
 #include <keisan/keisan.hpp>
 
-#include <string>
-#include <utility>
+#include <algorithm>
 
 namespace tosshin_gazebo_plugins
 {
 
 NavigationPlugin::NavigationPlugin()
-: initial_x_position(0.0),
-  initial_y_position(0.0),
-  initial_yaw_orientation(0.0),
-  forward(0.0),
-  left(0.0),
-  yaw(0.0)
 {
 }
 
 void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf)
 {
   // Initialize the node
-  {
-    node = gazebo_ros::Node::Get(sdf);
-    RCLCPP_INFO_STREAM(
-      node->get_logger(),
-      "Node initialized with name " << node->get_name() << "!"
-    );
-
-    // Initialize the position publisher
-    {
-      position_publisher = node->create_publisher<Position>(
-        std::string(node->get_name()) + "/position", 10
-      );
-
-      RCLCPP_INFO_STREAM(
-        node->get_logger(),
-        "Position publisher initialized on " <<
-          position_publisher->get_topic_name() << "!"
-      );
-    }
-
-    // Initialize the orientation publisher
-    {
-      orientation_publisher = node->create_publisher<Orientation>(
-        std::string(node->get_name()) + "/orientation", 10
-      );
-
-      RCLCPP_INFO_STREAM(
-        node->get_logger(),
-        "Orientation publisher initialized on " <<
-          orientation_publisher->get_topic_name() << "!"
-      );
-    }
-
-    // Initialize the maneuver event publisher
-    {
-      maneuver_event_publisher = node->create_publisher<Maneuver>(
-        std::string(node->get_name()) + "/maneuver_event", 10
-      );
-
-      RCLCPP_INFO_STREAM(
-        node->get_logger(),
-        "Maneuver event publisher initialized on " <<
-          maneuver_event_publisher->get_topic_name() << "!"
-      );
-    }
-
-    // Initialize the maneuver input subscription
-    {
-      maneuver_input_subscription = node->create_subscription<Maneuver>(
-        std::string(node->get_name()) + "/maneuver_input", 10,
-        [this](const Maneuver::SharedPtr maneuver) {
-          configure_maneuver(*maneuver);
-        }
-      );
-
-      RCLCPP_INFO_STREAM(
-        node->get_logger(),
-        "Maneuver input subscription initialized on " <<
-          maneuver_input_subscription->get_topic_name() << "!"
-      );
-    }
-
-    // Initialize the configure maneuver service
-    {
-      configure_maneuver_service = node->create_service<ConfigureManeuver>(
-        std::string(node->get_name()) + "/configure_maneuver",
-        [this](ConfigureManeuver::Request::SharedPtr request,
-        ConfigureManeuver::Response::SharedPtr response) {
-          response->maneuver = configure_maneuver(request->maneuver);
-        }
-      );
-
-      RCLCPP_INFO_STREAM(
-        node->get_logger(),
-        "Configure maneuver service initialized on " <<
-          configure_maneuver_service->get_service_name() << "!"
-      );
-    }
-  }
+  set_node(gazebo_ros::Node::Get(sdf));
 
   // Initialize the model
+  this->model = model;
+
+  // Initialize the position and the orientation
   {
-    this->model = model;
-    world = this->model->GetWorld();
+    auto pose = model->WorldPose();
 
-    // Initialize the position and the orientation
-    {
-      auto pose = model->WorldPose();
+    initial_odometry.position.x = pose.Pos().X();
+    initial_odometry.position.y = pose.Pos().Y();
+    initial_odometry.orientation.yaw = pose.Rot().Yaw();
 
-      initial_x_position = pose.Pos().X();
-      initial_y_position = pose.Pos().Y();
-      initial_yaw_orientation = pose.Rot().Yaw();
+    RCLCPP_INFO_STREAM(
+      get_node()->get_logger(),
+      "Model initialized on position " << initial_odometry.position.x <<
+        " " << initial_odometry.position.y << " and orientation " <<
+        initial_odometry.orientation.yaw << "!");
+  }
 
-      RCLCPP_INFO_STREAM(
-        node->get_logger(),
-        "Model initialized on position " << initial_x_position <<
-          " " << initial_y_position << " and orientation " <<
-          initial_yaw_orientation << "!");
-    }
+  // Initialize the update connection
+  {
+    update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(
+      std::bind(&NavigationPlugin::Update, this)
+    );
 
-    // Initialize the update connection
-    {
-      update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(
-        std::bind(&NavigationPlugin::Update, this)
-      );
-
-      RCLCPP_INFO(node->get_logger(), "Connected to the world update!");
-    }
+    RCLCPP_INFO(get_node()->get_logger(), "Connected to the world update!");
   }
 }
 
 void NavigationPlugin::Update()
 {
-  // Publish current position
+  // Update current odometry
   {
-    Position position;
+    tosshin_cpp::Odometry odometry;
 
     auto pos = model->WorldPose().Pos();
 
-    position.x = pos.X() - initial_x_position;
-    position.y = pos.Y() - initial_y_position;
-
-    position_publisher->publish(position);
-  }
-
-  // Publish current orientation
-  {
-    Orientation orientation;
+    odometry.position.x = pos.X() - initial_odometry.position.x;
+    odometry.position.y = pos.Y() - initial_odometry.position.y;
 
     double yaw = model->WorldPose().Rot().Yaw();
 
-    orientation.yaw = keisan::rad_to_deg(yaw - initial_yaw_orientation);
+    odometry.orientation.yaw = keisan::rad_to_deg(yaw - initial_odometry.orientation.yaw);
 
-    orientation_publisher->publish(orientation);
+    set_odometry(odometry);
   }
 
-  // Set velocities
+  // Update velocities
   {
+    auto maneuver = get_maneuver();
+
     auto angle = model->RelativePose().Rot().Yaw();
     auto gravity = model->WorldLinearVel().Z();
 
     auto linear_velocity = ignition::math::Vector3d(
-      (forward * cos(angle) + left * sin(angle)) / 60.0,
-      (forward * sin(angle) + left * cos(angle)) / 60.0,
-      gravity < 0.0 ? gravity : 0.0
+      (maneuver.forward * cos(angle) + maneuver.left * sin(angle)) / 60.0,
+      (maneuver.forward * sin(angle) + maneuver.left * cos(angle)) / 60.0,
+      std::min(gravity, 0.0)
     );
 
     model->SetLinearVel(linear_velocity);
-    model->SetAngularVel({0.0, 0.0, yaw / 60.0});
+    model->SetAngularVel({0.0, 0.0, maneuver.yaw / 60.0});
   }
 
   // Lock pitch and roll rotations
@@ -204,55 +111,6 @@ void NavigationPlugin::Update()
 
     model->SetRelativePose(pose);
   }
-}
-
-Maneuver NavigationPlugin::configure_maneuver(const Maneuver & maneuver)
-{
-  Maneuver result;
-  bool configured = false;
-
-  if (maneuver.forward.size() > 0) {
-    forward = maneuver.forward.front();
-    result.forward.push_back(forward);
-
-    configured = true;
-    RCLCPP_DEBUG_STREAM(
-      node->get_logger(),
-      "Forward maneuver configured into " << forward << "!"
-    );
-  }
-
-  if (maneuver.left.size() > 0) {
-    left = maneuver.left.front();
-    result.left.push_back(left);
-
-    configured = true;
-    RCLCPP_DEBUG_STREAM(
-      node->get_logger(),
-      "Left maneuver configured into " << left << "!"
-    );
-  }
-
-  if (maneuver.yaw.size() > 0) {
-    yaw = maneuver.yaw.front();
-    result.yaw.push_back(yaw);
-
-    configured = true;
-    RCLCPP_DEBUG_STREAM(
-      node->get_logger(),
-      "Yaw maneuver configured into " << yaw << "!"
-    );
-  }
-
-  if (configured) {
-    maneuver_event_publisher->publish(result);
-  } else {
-    result.forward.push_back(forward);
-    result.left.push_back(left);
-    result.yaw.push_back(yaw);
-  }
-
-  return result;
 }
 
 GZ_REGISTER_MODEL_PLUGIN(NavigationPlugin)
