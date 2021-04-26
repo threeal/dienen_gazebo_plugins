@@ -18,8 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#ifndef TOSSHIN_SIM__NAVIGATION_PLUGIN_HPP_
-#define TOSSHIN_SIM__NAVIGATION_PLUGIN_HPP_
+#ifndef TOSSHIN_GAZEBO_PLUGINS__NAVIGATION_PLUGIN_HPP_
+#define TOSSHIN_GAZEBO_PLUGINS__NAVIGATION_PLUGIN_HPP_
 
 #include <gazebo/common/Plugin.hh>
 #include <rclcpp/rclcpp.hpp>
@@ -31,7 +31,7 @@
 #include <map>
 #include <string>
 
-namespace tosshin_sim
+namespace tosshin_gazebo_plugins
 {
 using Maneuver = tosshin_interfaces::msg::Maneuver;
 using Orientation = tosshin_interfaces::msg::Orientation;
@@ -74,6 +74,6 @@ private:
   gazebo::event::ConnectionPtr update_connection;
 };
 
-}  // namespace tosshin_sim
+}  // namespace tosshin_gazebo_plugins
 
-#endif  // TOSSHIN_SIM__NAVIGATION_PLUGIN_HPP_
+#endif  // TOSSHIN_GAZEBO_PLUGINS__NAVIGATION_PLUGIN_HPP_
