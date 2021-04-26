@@ -15,4 +15,4 @@ jobs:
         with:
           ros2-distro: foxy
           apt-packages: ros-foxy-gazebo-ros
-          external-repos: threeal/tosshin#v0.1.0 ichiro-its/keisan#v0.2.0
+          external-repos: threeal/tosshin#v0.2.0 ichiro-its/keisan#v0.2.0
