@@ -75,13 +75,13 @@ void NavigationPlugin::Update()
 
     auto linear = current_twist.linear;
     auto linear_velocity = ignition::math::Vector3d(
-      (linear.x * cos(angle) + linear.y * sin(angle)) / 60.0,
-      (linear.x * sin(angle) + linear.y * cos(angle)) / 60.0,
+      linear.x * cos(angle) - linear.y * sin(angle),
+      linear.x * sin(angle) + linear.y * cos(angle),
       std::min(gravity, 0.0)
     );
 
     model->SetLinearVel(linear_velocity);
-    model->SetAngularVel({0.0, 0.0, current_twist.angular.z / 60.0});
+    model->SetAngularVel({0.0, 0.0, current_twist.angular.z});
   }
 
   // Lock pitch and roll rotations
