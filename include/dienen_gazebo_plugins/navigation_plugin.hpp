@@ -18,8 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#ifndef TOSSHIN_GAZEBO_PLUGINS__NAVIGATION_PLUGIN_HPP_
-#define TOSSHIN_GAZEBO_PLUGINS__NAVIGATION_PLUGIN_HPP_
+#ifndef DIENEN_GAZEBO_PLUGINS__NAVIGATION_PLUGIN_HPP_
+#define DIENEN_GAZEBO_PLUGINS__NAVIGATION_PLUGIN_HPP_
 
 #include <gazebo/common/Plugin.hh>
 #include <geometry_msgs/msg/pose.hpp>
@@ -27,7 +27,7 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-namespace tosshin_gazebo_plugins
+namespace dienen_gazebo_plugins
 {
 
 using geometry_msgs::msg::Pose;
@@ -60,6 +60,6 @@ private:
   gazebo::event::ConnectionPtr update_connection;
 };
 
-}  // namespace tosshin_gazebo_plugins
+}  // namespace dienen_gazebo_plugins
 
-#endif  // TOSSHIN_GAZEBO_PLUGINS__NAVIGATION_PLUGIN_HPP_
+#endif  // DIENEN_GAZEBO_PLUGINS__NAVIGATION_PLUGIN_HPP_

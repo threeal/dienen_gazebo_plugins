@@ -18,14 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "tosshin_gazebo_plugins/navigation_plugin.hpp"
+#include "dienen_gazebo_plugins/navigation_plugin.hpp"
 
 #include <gazebo/physics/physics.hh>
 #include <gazebo_ros/node.hpp>
 
 #include <algorithm>
 
-namespace tosshin_gazebo_plugins
+namespace dienen_gazebo_plugins
 {
 
 NavigationPlugin::NavigationPlugin()
@@ -143,4 +143,4 @@ Odometry NavigationPlugin::get_odometry() const
 
 GZ_REGISTER_MODEL_PLUGIN(NavigationPlugin)
 
-}  // namespace tosshin_gazebo_plugins
+}  // namespace dienen_gazebo_plugins

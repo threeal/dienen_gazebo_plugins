@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(tosshin_gazebo_plugins)
+project(dienen_gazebo_plugins)
 
 if(NOT CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 99)
@@ -20,17 +20,17 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
-add_library(tosshin_navigation_plugin SHARED
+add_library(dienen_navigation_plugin SHARED
   "src/navigation_plugin.cpp")
 
-target_include_directories(tosshin_navigation_plugin PUBLIC
+target_include_directories(dienen_navigation_plugin PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-ament_target_dependencies(tosshin_navigation_plugin
+ament_target_dependencies(dienen_navigation_plugin
   gazebo_ros geometry_msgs nav_msgs rclcpp)
 
-install(TARGETS tosshin_navigation_plugin
+install(TARGETS dienen_navigation_plugin
   DESTINATION "share/${PROJECT_NAME}/plugins")
 
 if(BUILD_TESTING)
