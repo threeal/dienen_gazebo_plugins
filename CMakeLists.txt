@@ -16,9 +16,9 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(gazebo_ros REQUIRED)
-find_package(keisan REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(tosshin_cpp REQUIRED)
 
 add_library(tosshin_navigation_plugin SHARED
   "src/navigation_plugin.cpp")
@@ -28,10 +28,7 @@ target_include_directories(tosshin_navigation_plugin PUBLIC
   $<INSTALL_INTERFACE:include>)
 
 ament_target_dependencies(tosshin_navigation_plugin
-  gazebo_ros
-  keisan
-  rclcpp
-  tosshin_cpp)
+  gazebo_ros geometry_msgs nav_msgs rclcpp)
 
 install(TARGETS tosshin_navigation_plugin
   DESTINATION "share/${PROJECT_NAME}/plugins")

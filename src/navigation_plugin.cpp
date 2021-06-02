@@ -22,7 +22,6 @@
 
 #include <gazebo/physics/physics.hh>
 #include <gazebo_ros/node.hpp>
-#include <keisan/keisan.hpp>
 
 #include <algorithm>
 
@@ -36,69 +35,53 @@ NavigationPlugin::NavigationPlugin()
 void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf)
 {
   // Initialize the node
-  set_node(gazebo_ros::Node::Get(sdf));
+  {
+    node = gazebo_ros::Node::Get(sdf);
 
-  // Initialize the model
+    // Initialize the velocity subscription
+    twist_subscription = node->create_subscription<Twist>(
+      "/cmd_vel", 10,
+      [&](const Twist::SharedPtr msg) {
+        current_twist = *msg;
+      });
+
+    // Initialize the odometry publisher
+    odometry_publisher = node->create_publisher<Odometry>("/odom", 10);
+  }
+
   this->model = model;
 
-  // Initialize the position and the orientation
-  {
-    auto pose = model->WorldPose();
-
-    initial_odometry.position.x = pose.Pos().X();
-    initial_odometry.position.y = pose.Pos().Y();
-    initial_odometry.orientation.yaw = pose.Rot().Yaw();
-
-    RCLCPP_INFO_STREAM(
-      get_node()->get_logger(),
-      "Model initialized on position " << initial_odometry.position.x <<
-        " " << initial_odometry.position.y << " and orientation " <<
-        initial_odometry.orientation.yaw << "!");
-  }
+  // Initialize the initial pose
+  initial_pose = get_pose();
 
   // Initialize the update connection
-  {
-    update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(
-      std::bind(&NavigationPlugin::Update, this)
-    );
+  update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(
+    std::bind(&NavigationPlugin::Update, this)
+  );
 
-    RCLCPP_INFO(get_node()->get_logger(), "Connected to the world update!");
-  }
+  RCLCPP_INFO(node->get_logger(), "Connected to the world update!");
 }
 
 void NavigationPlugin::Update()
 {
-  // Update current odometry
-  {
-    tosshin_cpp::Odometry odometry;
-
-    auto pos = model->WorldPose().Pos();
-
-    odometry.position.x = pos.X() - initial_odometry.position.x;
-    odometry.position.y = pos.Y() - initial_odometry.position.y;
-
-    double yaw = model->WorldPose().Rot().Yaw();
-
-    odometry.orientation.yaw = keisan::rad_to_deg(yaw - initial_odometry.orientation.yaw);
-
-    set_odometry(odometry);
-  }
+  // Publish current odometry
+  auto odometry = get_odometry();
+  odometry_publisher->publish(odometry);
 
   // Update velocities
   {
-    auto maneuver = get_maneuver();
-
     auto angle = model->RelativePose().Rot().Yaw();
     auto gravity = model->WorldLinearVel().Z();
 
+    auto linear = current_twist.linear;
     auto linear_velocity = ignition::math::Vector3d(
-      (maneuver.forward * cos(angle) + maneuver.left * sin(angle)) / 60.0,
-      (maneuver.forward * sin(angle) + maneuver.left * cos(angle)) / 60.0,
+      (linear.x * cos(angle) + linear.y * sin(angle)) / 60.0,
+      (linear.x * sin(angle) + linear.y * cos(angle)) / 60.0,
       std::min(gravity, 0.0)
     );
 
     model->SetLinearVel(linear_velocity);
-    model->SetAngularVel({0.0, 0.0, maneuver.yaw / 60.0});
+    model->SetAngularVel({0.0, 0.0, current_twist.angular.z / 60.0});
   }
 
   // Lock pitch and roll rotations
@@ -111,6 +94,51 @@ void NavigationPlugin::Update()
 
     model->SetRelativePose(pose);
   }
+}
+
+Pose NavigationPlugin::get_pose() const
+{
+  Pose pose;
+
+  auto pos = model->WorldPose().Pos();
+  pose.position.x = pos.X();
+  pose.position.y = pos.Y();
+  pose.position.z = pos.Z();
+
+  auto rot = model->WorldPose().Rot();
+  pose.orientation.x = rot.X();
+  pose.orientation.y = rot.Y();
+  pose.orientation.z = rot.Z();
+  pose.orientation.w = rot.W();
+
+  return pose;
+}
+
+Odometry NavigationPlugin::get_odometry() const
+{
+  Odometry odometry;
+
+  auto sim_time = model->GetWorld()->SimTime();
+  odometry.header.stamp.sec = sim_time.sec;
+  odometry.header.stamp.nanosec = sim_time.nsec;
+
+  odometry.header.frame_id = "odom";
+
+  auto pose = get_pose();
+
+  pose.position.x -= initial_pose.position.x;
+  pose.position.y -= initial_pose.position.y;
+  pose.position.z -= initial_pose.position.z;
+
+  pose.orientation.x -= initial_pose.orientation.x;
+  pose.orientation.y -= initial_pose.orientation.y;
+  pose.orientation.z -= initial_pose.orientation.z;
+  pose.orientation.w -= initial_pose.orientation.w;
+
+  odometry.pose.pose = pose;
+  odometry.twist.twist = current_twist;
+
+  return odometry;
 }
 
 GZ_REGISTER_MODEL_PLUGIN(NavigationPlugin)

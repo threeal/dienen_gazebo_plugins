@@ -22,13 +22,19 @@
 #define TOSSHIN_GAZEBO_PLUGINS__NAVIGATION_PLUGIN_HPP_
 
 #include <gazebo/common/Plugin.hh>
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/twist.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <tosshin_cpp/tosshin_cpp.hpp>
 
 namespace tosshin_gazebo_plugins
 {
 
-class NavigationPlugin : public gazebo::ModelPlugin, tosshin_cpp::NavigationProvider
+using geometry_msgs::msg::Pose;
+using geometry_msgs::msg::Twist;
+using nav_msgs::msg::Odometry;
+
+class NavigationPlugin : public gazebo::ModelPlugin
 {
 public:
   NavigationPlugin();
@@ -38,7 +44,16 @@ public:
 private:
   void Update();
 
-  tosshin_cpp::Odometry initial_odometry;
+  Pose get_pose() const;
+  Odometry get_odometry() const;
+
+  rclcpp::Node::SharedPtr node;
+
+  rclcpp::Subscription<Twist>::SharedPtr twist_subscription;
+  rclcpp::Publisher<Odometry>::SharedPtr odometry_publisher;
+
+  Pose initial_pose;
+  Twist current_twist;
 
   gazebo::physics::ModelPtr model;
 
