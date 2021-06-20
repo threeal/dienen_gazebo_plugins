@@ -22,7 +22,9 @@
 #define DIENEN_GAZEBO_PLUGINS__NAVIGATION_PLUGIN_HPP_
 
 #include <gazebo/common/Plugin.hh>
+#include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -30,7 +32,9 @@
 namespace dienen_gazebo_plugins
 {
 
+using geometry_msgs::msg::Point;
 using geometry_msgs::msg::Pose;
+using geometry_msgs::msg::Quaternion;
 using geometry_msgs::msg::Twist;
 using nav_msgs::msg::Odometry;
 
@@ -44,7 +48,9 @@ public:
 private:
   void Update();
 
-  Pose get_pose() const;
+  Point get_position() const;
+  Quaternion get_orientation() const;
+
   Odometry get_odometry() const;
 
   rclcpp::Node::SharedPtr node;
@@ -52,7 +58,7 @@ private:
   rclcpp::Subscription<Twist>::SharedPtr twist_subscription;
   rclcpp::Publisher<Odometry>::SharedPtr odometry_publisher;
 
-  Pose initial_pose;
+  Point initial_position;
   Twist current_twist;
 
   gazebo::physics::ModelPtr model;
