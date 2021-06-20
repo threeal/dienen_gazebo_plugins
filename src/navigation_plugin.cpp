@@ -51,8 +51,8 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
 
   this->model = model;
 
-  // Initialize the initial pose
-  initial_pose = get_pose();
+  // Initialize the initial position
+  initial_position = get_position();
 
   // Initialize the update connection
   update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(
@@ -96,22 +96,29 @@ void NavigationPlugin::Update()
   }
 }
 
-Pose NavigationPlugin::get_pose() const
+Point NavigationPlugin::get_position() const
 {
-  Pose pose;
+  Point position;
 
   auto pos = model->WorldPose().Pos();
-  pose.position.x = pos.X();
-  pose.position.y = pos.Y();
-  pose.position.z = pos.Z();
+  position.x = pos.X();
+  position.y = pos.Y();
+  position.z = pos.Z();
+
+  return position;
+}
+
+Quaternion NavigationPlugin::get_orientation() const
+{
+  Quaternion orientation;
 
   auto rot = model->WorldPose().Rot();
-  pose.orientation.x = rot.X();
-  pose.orientation.y = rot.Y();
-  pose.orientation.z = rot.Z();
-  pose.orientation.w = rot.W();
+  orientation.x = rot.X();
+  orientation.y = rot.Y();
+  orientation.z = rot.Z();
+  orientation.w = rot.W();
 
-  return pose;
+  return orientation;
 }
 
 Odometry NavigationPlugin::get_odometry() const
@@ -124,18 +131,13 @@ Odometry NavigationPlugin::get_odometry() const
 
   odometry.header.frame_id = "odom";
 
-  auto pose = get_pose();
+  odometry.pose.pose.position = get_position();
+  odometry.pose.pose.orientation = get_orientation();
 
-  pose.position.x -= initial_pose.position.x;
-  pose.position.y -= initial_pose.position.y;
-  pose.position.z -= initial_pose.position.z;
+  odometry.pose.pose.position.x -= initial_position.x;
+  odometry.pose.pose.position.y -= initial_position.y;
+  odometry.pose.pose.position.z -= initial_position.z;
 
-  pose.orientation.x -= initial_pose.orientation.x;
-  pose.orientation.y -= initial_pose.orientation.y;
-  pose.orientation.z -= initial_pose.orientation.z;
-  pose.orientation.w -= initial_pose.orientation.w;
-
-  odometry.pose.pose = pose;
   odometry.twist.twist = current_twist;
 
   return odometry;
