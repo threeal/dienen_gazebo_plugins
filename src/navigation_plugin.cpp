@@ -53,6 +53,7 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
 
   // Initialize the initial position
   initial_position = get_position();
+  initial_orientation = get_orientation();
 
   // Initialize the update connection
   update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(
@@ -96,29 +97,15 @@ void NavigationPlugin::Update()
   }
 }
 
-Point NavigationPlugin::get_position() const
+keisan::Point2 NavigationPlugin::get_position() const
 {
-  Point position;
-
   auto pos = model->WorldPose().Pos();
-  position.x = pos.X();
-  position.y = pos.Y();
-  position.z = pos.Z();
-
-  return position;
+  return keisan::Point2(pos.X(), pos.Y());
 }
 
-Quaternion NavigationPlugin::get_orientation() const
+keisan::Angle NavigationPlugin::get_orientation() const
 {
-  Quaternion orientation;
-
-  auto rot = model->WorldPose().Rot();
-  orientation.x = rot.X();
-  orientation.y = rot.Y();
-  orientation.z = rot.Z();
-  orientation.w = rot.W();
-
-  return orientation;
+  return keisan::make_radian(model->WorldPose().Rot().Yaw());
 }
 
 Odometry NavigationPlugin::get_odometry() const
@@ -131,12 +118,24 @@ Odometry NavigationPlugin::get_odometry() const
 
   odometry.header.frame_id = "odom";
 
-  odometry.pose.pose.position = get_position();
-  odometry.pose.pose.orientation = get_orientation();
+  auto position = get_position();
+  auto orientation = get_orientation();
 
-  odometry.pose.pose.position.x -= initial_position.x;
-  odometry.pose.pose.position.y -= initial_position.y;
-  odometry.pose.pose.position.z -= initial_position.z;
+  // transform current position and orientation according to the initial position and orientation
+  position = position.translate(-initial_position).rotate(-initial_orientation);
+  orientation = initial_orientation.difference_to(orientation);
+
+  odometry.pose.pose.position.x = position.x;
+  odometry.pose.pose.position.y = position.y;
+  odometry.pose.pose.position.z = 0.0;
+
+  auto quaternion = keisan::EulerAngles(
+    keisan::make_degree(0.0), keisan::make_degree(0.0), orientation).quaternion();
+
+  odometry.pose.pose.orientation.x = quaternion.x;
+  odometry.pose.pose.orientation.y = quaternion.y;
+  odometry.pose.pose.orientation.z = quaternion.z;
+  odometry.pose.pose.orientation.w = quaternion.w;
 
   odometry.twist.twist = current_twist;
 
