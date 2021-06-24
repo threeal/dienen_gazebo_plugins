@@ -17,6 +17,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(gazebo_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(keisan REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
@@ -28,7 +29,7 @@ target_include_directories(dienen_navigation_plugin PUBLIC
   $<INSTALL_INTERFACE:include>)
 
 ament_target_dependencies(dienen_navigation_plugin
-  gazebo_ros geometry_msgs nav_msgs rclcpp)
+  gazebo_ros geometry_msgs keisan nav_msgs rclcpp)
 
 install(TARGETS dienen_navigation_plugin
   DESTINATION "share/${PROJECT_NAME}/plugins")

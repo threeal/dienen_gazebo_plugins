@@ -26,6 +26,7 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/quaternion.hpp>
 #include <geometry_msgs/msg/twist.hpp>
+#include <keisan/keisan.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
 
@@ -48,8 +49,8 @@ public:
 private:
   void Update();
 
-  Point get_position() const;
-  Quaternion get_orientation() const;
+  keisan::Point2 get_position() const;
+  keisan::Angle get_orientation() const;
 
   Odometry get_odometry() const;
 
@@ -58,7 +59,9 @@ private:
   rclcpp::Subscription<Twist>::SharedPtr twist_subscription;
   rclcpp::Publisher<Odometry>::SharedPtr odometry_publisher;
 
-  Point initial_position;
+  keisan::Point2 initial_position;
+  keisan::Angle initial_orientation;
+
   Twist current_twist;
 
   gazebo::physics::ModelPtr model;
