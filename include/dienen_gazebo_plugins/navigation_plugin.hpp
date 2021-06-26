@@ -22,22 +22,12 @@
 #define DIENEN_GAZEBO_PLUGINS__NAVIGATION_PLUGIN_HPP_
 
 #include <gazebo/common/Plugin.hh>
-#include <geometry_msgs/msg/point.hpp>
-#include <geometry_msgs/msg/pose.hpp>
-#include <geometry_msgs/msg/quaternion.hpp>
-#include <geometry_msgs/msg/twist.hpp>
 #include <keisan/keisan.hpp>
-#include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <tosshin/tosshin.hpp>
 
 namespace dienen_gazebo_plugins
 {
-
-using geometry_msgs::msg::Point;
-using geometry_msgs::msg::Pose;
-using geometry_msgs::msg::Quaternion;
-using geometry_msgs::msg::Twist;
-using nav_msgs::msg::Odometry;
 
 class NavigationPlugin : public gazebo::ModelPlugin
 {
@@ -52,17 +42,17 @@ private:
   keisan::Point2 get_position() const;
   keisan::Angle get_orientation() const;
 
-  Odometry get_odometry() const;
+  tosshin::msg::Odometry get_odometry() const;
 
   rclcpp::Node::SharedPtr node;
 
-  rclcpp::Subscription<Twist>::SharedPtr twist_subscription;
-  rclcpp::Publisher<Odometry>::SharedPtr odometry_publisher;
+  rclcpp::Subscription<tosshin::msg::Twist>::SharedPtr twist_subscription;
+  rclcpp::Publisher<tosshin::msg::Odometry>::SharedPtr odometry_publisher;
 
   keisan::Point2 initial_position;
   keisan::Angle initial_orientation;
 
-  Twist current_twist;
+  tosshin::msg::Twist current_twist;
 
   gazebo::physics::ModelPtr model;
 
