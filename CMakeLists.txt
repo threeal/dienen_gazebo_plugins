@@ -15,11 +15,12 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(gazebo_ros REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(keisan REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(rclcpp REQUIRED)
+
+set(DEPENDENCIES gazebo_ros keisan rclcpp tosshin)
+
+foreach(DEPENDENCY ${DEPENDENCIES})
+  find_package(${DEPENDENCY} REQUIRED)
+endforeach()
 
 add_library(dienen_navigation_plugin SHARED
   "src/navigation_plugin.cpp")
@@ -28,8 +29,7 @@ target_include_directories(dienen_navigation_plugin PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-ament_target_dependencies(dienen_navigation_plugin
-  gazebo_ros geometry_msgs keisan nav_msgs rclcpp)
+ament_target_dependencies(dienen_navigation_plugin ${DEPENDENCIES})
 
 install(TARGETS dienen_navigation_plugin
   DESTINATION "share/${PROJECT_NAME}/plugins")

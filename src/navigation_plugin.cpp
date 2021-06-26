@@ -18,12 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "dienen_gazebo_plugins/navigation_plugin.hpp"
+#include <dienen_gazebo_plugins/navigation_plugin.hpp>
 
 #include <gazebo/physics/physics.hh>
 #include <gazebo_ros/node.hpp>
 
 #include <algorithm>
+
+namespace ksn = keisan;
+namespace tsn = tosshin;
 
 namespace dienen_gazebo_plugins
 {
@@ -39,14 +42,14 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
     node = gazebo_ros::Node::Get(sdf);
 
     // Initialize the velocity subscription
-    twist_subscription = node->create_subscription<Twist>(
+    twist_subscription = node->create_subscription<tsn::msg::Twist>(
       "/cmd_vel", 10,
-      [&](const Twist::SharedPtr msg) {
+      [&](const tsn::msg::Twist::SharedPtr msg) {
         current_twist = *msg;
       });
 
     // Initialize the odometry publisher
-    odometry_publisher = node->create_publisher<Odometry>("/odom", 10);
+    odometry_publisher = node->create_publisher<tsn::msg::Odometry>("/odom", 10);
   }
 
   this->model = model;
@@ -71,17 +74,12 @@ void NavigationPlugin::Update()
 
   // Update velocities
   {
-    auto angle = model->RelativePose().Rot().Yaw();
+    auto angle = ksn::make_radian(model->RelativePose().Rot().Yaw());
     auto gravity = model->WorldLinearVel().Z();
 
-    auto linear = current_twist.linear;
-    auto linear_velocity = ignition::math::Vector3d(
-      linear.x * cos(angle) - linear.y * sin(angle),
-      linear.x * sin(angle) + linear.y * cos(angle),
-      std::min(gravity, 0.0)
-    );
+    auto linear_vel = tsn::extract_vector3_xy(current_twist.linear).rotate(angle);
 
-    model->SetLinearVel(linear_velocity);
+    model->SetLinearVel({linear_vel.x, linear_vel.y, std::min(gravity, 0.0)});
     model->SetAngularVel({0.0, 0.0, current_twist.angular.z});
   }
 
@@ -97,20 +95,20 @@ void NavigationPlugin::Update()
   }
 }
 
-keisan::Point2 NavigationPlugin::get_position() const
+ksn::Point2 NavigationPlugin::get_position() const
 {
   auto pos = model->WorldPose().Pos();
-  return keisan::Point2(pos.X(), pos.Y());
+  return ksn::Point2(pos.X(), pos.Y());
 }
 
-keisan::Angle NavigationPlugin::get_orientation() const
+ksn::Angle NavigationPlugin::get_orientation() const
 {
-  return keisan::make_radian(model->WorldPose().Rot().Yaw());
+  return ksn::make_radian(model->WorldPose().Rot().Yaw());
 }
 
-Odometry NavigationPlugin::get_odometry() const
+tsn::msg::Odometry NavigationPlugin::get_odometry() const
 {
-  Odometry odometry;
+  tsn::msg::Odometry odometry;
 
   auto sim_time = model->GetWorld()->SimTime();
   odometry.header.stamp.sec = sim_time.sec;
@@ -125,17 +123,10 @@ Odometry NavigationPlugin::get_odometry() const
   position = position.translate(-initial_position).rotate(-initial_orientation);
   orientation = initial_orientation.difference_to(orientation);
 
-  odometry.pose.pose.position.x = position.x;
-  odometry.pose.pose.position.y = position.y;
-  odometry.pose.pose.position.z = 0.0;
+  auto euler = ksn::EulerAngles(ksn::make_degree(0.0), ksn::make_degree(0.0), orientation);
 
-  auto quaternion = keisan::EulerAngles(
-    keisan::make_degree(0.0), keisan::make_degree(0.0), orientation).quaternion();
-
-  odometry.pose.pose.orientation.x = quaternion.x;
-  odometry.pose.pose.orientation.y = quaternion.y;
-  odometry.pose.pose.orientation.z = quaternion.z;
-  odometry.pose.pose.orientation.w = quaternion.w;
+  odometry.pose.pose.position = tsn::make_point_xy(position);
+  odometry.pose.pose.orientation = tsn::make_quaternion(euler.quaternion());
 
   odometry.twist.twist = current_twist;
 
