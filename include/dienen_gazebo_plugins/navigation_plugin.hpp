@@ -48,6 +48,7 @@ private:
 
   rclcpp::Subscription<tosshin::msg::Twist>::SharedPtr twist_subscription;
   rclcpp::Publisher<tosshin::msg::Odometry>::SharedPtr odometry_publisher;
+  rclcpp::Publisher<tosshin::msg::TFMessage>::SharedPtr tf_publisher;
 
   keisan::Point2 initial_position;
   keisan::Angle initial_orientation;

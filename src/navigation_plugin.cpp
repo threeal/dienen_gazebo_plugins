@@ -50,6 +50,9 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
 
     // Initialize the odometry publisher
     odometry_publisher = node->create_publisher<tsn::msg::Odometry>("/odom", 10);
+
+    // Initialize the tf publisher
+    tf_publisher = node->create_publisher<tsn::msg::TFMessage>("/tf", 10);
   }
 
   this->model = model;
@@ -71,6 +74,11 @@ void NavigationPlugin::Update()
   // Publish current odometry
   auto odometry = get_odometry();
   odometry_publisher->publish(odometry);
+
+  // Publish current tf
+  tsn::msg::TFMessage tf;
+  tf.transforms.push_back(tsn::make_transform_stamped(odometry));
+  tf_publisher->publish(tf);
 
   // Update velocities
   {
@@ -115,6 +123,7 @@ tsn::msg::Odometry NavigationPlugin::get_odometry() const
   odometry.header.stamp.nanosec = sim_time.nsec;
 
   odometry.header.frame_id = "odom";
+  odometry.child_frame_id = "base_link";
 
   auto position = get_position();
   auto orientation = get_orientation();
