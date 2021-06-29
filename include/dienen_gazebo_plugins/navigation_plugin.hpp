@@ -55,6 +55,9 @@ private:
 
   tosshin::msg::Twist current_twist;
 
+  double linear_speed_scale;
+  double angular_speed_scale;
+
   gazebo::physics::ModelPtr model;
 
   gazebo::event::ConnectionPtr update_connection;

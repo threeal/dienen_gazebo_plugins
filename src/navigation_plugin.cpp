@@ -32,6 +32,8 @@ namespace dienen_gazebo_plugins
 {
 
 NavigationPlugin::NavigationPlugin()
+: linear_speed_scale(1.0),
+  angular_speed_scale(1.0)
 {
 }
 
@@ -56,6 +58,16 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
   }
 
   this->model = model;
+
+  // Initialize the speed scales
+  linear_speed_scale = sdf->Get<double>("linear_speed_scale", linear_speed_scale).first;
+  angular_speed_scale = sdf->Get<double>("angular_speed_scale", angular_speed_scale).first;
+
+  RCLCPP_INFO_STREAM(
+    node->get_logger(),
+    "\nUsing speed scales:" <<
+      "\nLinear\t: " << linear_speed_scale <<
+      "\nAngular\t: " << angular_speed_scale);
 
   // Initialize the initial position
   initial_position = get_position();
@@ -86,9 +98,10 @@ void NavigationPlugin::Update()
     auto gravity = model->WorldLinearVel().Z();
 
     auto linear_vel = tsn::extract_vector3_xy(current_twist.linear).rotate(angle);
+    linear_vel *= linear_speed_scale;
 
     model->SetLinearVel({linear_vel.x, linear_vel.y, std::min(gravity, 0.0)});
-    model->SetAngularVel({0.0, 0.0, current_twist.angular.z});
+    model->SetAngularVel({0.0, 0.0, current_twist.angular.z * angular_speed_scale});
   }
 
   // Lock pitch and roll rotations
