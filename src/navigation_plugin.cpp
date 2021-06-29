@@ -63,6 +63,12 @@ void NavigationPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf
   linear_speed_scale = sdf->Get<double>("linear_speed_scale", linear_speed_scale).first;
   angular_speed_scale = sdf->Get<double>("angular_speed_scale", angular_speed_scale).first;
 
+  RCLCPP_INFO_STREAM(
+    node->get_logger(),
+    "\nUsing speed scales:" <<
+      "\nLinear\t: " << linear_speed_scale <<
+      "\nAngular\t: " << angular_speed_scale);
+
   // Initialize the initial position
   initial_position = get_position();
   initial_orientation = get_orientation();
