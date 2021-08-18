@@ -122,7 +122,7 @@ ksn::Point2 NavigationPlugin::get_position() const
   return ksn::Point2(pos.X(), pos.Y());
 }
 
-ksn::Angle NavigationPlugin::get_orientation() const
+ksn::Angle<double> NavigationPlugin::get_orientation() const
 {
   return ksn::make_radian(model->WorldPose().Rot().Yaw());
 }
