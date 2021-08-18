@@ -40,7 +40,7 @@ private:
   void Update();
 
   keisan::Point2 get_position() const;
-  keisan::Angle get_orientation() const;
+  keisan::Angle<double> get_orientation() const;
 
   tosshin::msg::Odometry get_odometry() const;
 
@@ -51,7 +51,7 @@ private:
   rclcpp::Publisher<tosshin::msg::TFMessage>::SharedPtr tf_publisher;
 
   keisan::Point2 initial_position;
-  keisan::Angle initial_orientation;
+  keisan::Angle<double> initial_orientation;
 
   tosshin::msg::Twist current_twist;
 
